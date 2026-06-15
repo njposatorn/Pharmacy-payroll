@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ระบบเข้างาน-เงินเดือนร้านยา</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="เข้างาน">
+<meta name="theme-color" content="#1565C0">
+<style>
+:root {
+  --primary: #1565C0;
+  --primary-light: #E3F2FD;
+  --green: #2E7D32;
+  --green-light: #E8F5E9;
+  --red: #C62828;
+  --red-light: #FFEBEE;
+  --orange: #E65100;
+  --orange-light: #FFF3E0;
+  --gray: #455A64;
+  --gray-light: #ECEFF1;
+  --bg: #F0F4F8;
+  --card: #FFFFFF;
+  --border: #CFD8DC;
+  --text: #1A237E;
+  --text2: #546E7A;
+  --shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Sarabun','Thonburi','Tahoma','Arial Unicode MS',sans-serif;background:var(--bg);color:#263238;min-height:100vh;padding-bottom:72px;font-size:15px}
+.hdr{background:var(--primary);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:200;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.hdr h1{font-size:17px;font-weight:700}
+.hdr .sub{font-size:12px;opacity:.85;margin-top:1px}
+.bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;z-index:200;box-shadow:0 -2px 8px rgba(0,0,0,.1)}
+.nb{flex:1;padding:7px 2px 8px;border:none;background:none;color:var(--text2);font-size:10.5px;font-family:'Sarabun','Thonburi','Tahoma',sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px}
+.nb.on{color:var(--primary)}
+.nb .ic{font-size:22px}
+.pg{display:none;padding:14px;max-width:640px;margin:0 auto}
+.pg.on{display:block}
+.card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:var(--shadow)}
+.ct{font-size:15px;font-weight:700;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+label{font-size:13px;color:var(--text2);display:block;margin-bottom:3px}
+input[type=date],input[type=time],input[type=number],input[type=text],select{width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'Sarabun','Thonburi','Tahoma',sans-serif;color:#263238;background:#fff;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{outline:none;border-color:var(--primary)}
+.fr{margin-bottom:11px}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 14px;border:none;border-radius:8px;font-size:14px;font-family:'Sarabun','Thonburi','Tahoma',sans-serif;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn:active{opacity:.75}
+.bp{background:var(--primary);color:#fff}
+.bg{background:var(--green);color:#fff}
+.br{background:var(--red);color:#fff}
+.bo{background:var(--orange);color:#fff}
+.bou{background:#fff;color:var(--primary);border:1.5px solid var(--primary)}
+.bgy{background:var(--gray);color:#fff}
+.bsm{padding:6px 10px;font-size:12px}
+.bfull{width:100%}
+/* Quick hour pills */
+.qb-wrap{display:flex;gap:7px;margin-top:7px;flex-wrap:wrap}
+.qb{padding:7px 13px;border:1.5px solid var(--primary);border-radius:20px;background:#fff;color:var(--primary);font-size:13px;font-family:'Sarabun','Thonburi','Tahoma',sans-serif;cursor:pointer;transition:all .15s}
+.qb.on{background:var(--primary);color:#fff}
+/* Pharmacist check card */
+.pc{border:1.5px solid var(--border);border-radius:10px;margin-bottom:9px;overflow:hidden}
+.pc.on{border-color:var(--primary)}
+.pc-hdr{display:flex;align-items:center;padding:11px 12px;cursor:pointer;background:#fff;user-select:none}
+.pc-hdr input[type=checkbox]{width:20px;height:20px;margin-right:10px;cursor:pointer;accent-color:var(--primary)}
+.pc-name{font-size:15px;font-weight:600;flex:1}
+.pc-body{display:none;padding:12px;background:var(--primary-light);border-top:1px solid var(--border)}
+.pc.on .pc-body{display:block}
+/* Staff card */
+.sc{border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px}
+.sc-title{font-size:14px;font-weight:700;color:var(--primary);margin-bottom:10px}
+/* Status buttons */
+.stbwrap{display:flex;gap:6px;flex-wrap:wrap}
+.stb{padding:7px 11px;border:1.5px solid var(--border);border-radius:20px;background:#fff;font-size:12.5px;font-family:'Sarabun','Thonburi','Tahoma',sans-serif;cursor:pointer;transition:all .15s;white-space:nowrap}
+.stb[data-s=present].on{background:var(--green);color:#fff;border-color:var(--green)}
+.stb[data-s=half].on{background:var(--orange);color:#fff;border-color:var(--orange)}
+.stb[data-s=absent_leave].on{background:var(--red);color:#fff;border-color:var(--red)}
+.stb[data-s=absent].on{background:#4A0000;color:#fff;border-color:#4A0000}
+.stb[data-s=off].on{background:var(--gray);color:#fff;border-color:var(--gray)}
+/* Shift buttons */
+.shwrap{display:flex;gap:8px}
+.shb{flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-size:13px;font-family:'Sarabun','Thonburi','Tahoma',sans-serif;cursor:pointer;text-align:center;transition:all .15s;line-height:1.4}
+.shb.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+/* Tables */
+.twrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--primary);color:#fff;padding:8px 7px;text-align:left;white-space:nowrap;font-weight:600}
+td{padding:7px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:nth-child(even) td{background:#F7F9FC}
+/* Toast */
+.toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;padding:11px 22px;border-radius:8px;font-size:14px;z-index:999;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:90vw}
+.toast.on{opacity:1}
+/* History entry */
+.he{border:1px solid var(--border);border-radius:9px;padding:10px 11px;margin-bottom:8px;background:#fff}
+.he-date{font-weight:700;color:var(--primary);font-size:14px}
+.hint{font-size:12px;color:var(--text2);margin-top:3px}
+/* Advance item */
+.ai{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.ai:last-child{border-bottom:none}
+.ai-name{font-weight:700;font-size:14px}
+.ai-det{font-size:12px;color:var(--text2)}
+.ai-amt{font-size:15px;font-weight:700;color:var(--red)}
+/* Dashboard employee block */
+.emp-block{border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;background:#fff}
+.emp-block-name{font-size:16px;font-weight:700;margin-bottom:9px;color:var(--primary)}
+.emp-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;font-size:13px}
+.emp-grid div{padding:2px 0}
+.net-line{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.net-amt{font-size:20px;font-weight:700;color:var(--primary)}
+/* Month selector row */
+.msel{display:flex;gap:8px;margin-bottom:14px}
+.msel select{flex:1}
+/* Empty state */
+.empty{text-align:center;padding:36px 16px;color:var(--text2)}
+.empty .eic{font-size:44px;margin-bottom:10px}
+/* Preview bar */
+.prev-bar{background:linear-gradient(135deg,var(--primary),#0D47A1);color:#fff;border-radius:9px;padding:11px 14px;margin-top:9px}
+.prev-bar .pl{font-size:12px;opacity:.85}
+.prev-bar .pa{font-size:20px;font-weight:700}
+/* Badge */
+.badge{display:inline-block;padding:1px 7px;border-radius:11px;font-size:11px;font-weight:700;margin-left:5px}
+.bp2{background:var(--primary-light);color:var(--primary)}
+.divider{border:none;border-top:1.5px dashed var(--border);margin:14px 0}
+.ot-sec{margin-top:9px;padding-top:9px;border-top:1px solid var(--border)}
+.today-btn{padding:9px 13px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:14px;font-family:'Sarabun','Thonburi','Tahoma',sans-serif;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>🏥 ระบบเข้างาน-เงินเดือนร้านยา</h1>
+  <div class="sub" id="hdr-date"></div>
+</div>
+
+<div id="pg-att" class="pg on"></div>
+<div id="pg-adv" class="pg"></div>
+<div id="pg-dash" class="pg"></div>
+<div id="pg-exp" class="pg"></div>
+
+<nav class="bnav">
+  <button class="nb on" id="nb-att" onclick="goTab('att')"><span class="ic">📋</span>บันทึกเข้างาน</button>
+  <button class="nb" id="nb-adv" onclick="goTab('adv')"><span class="ic">💵</span>เบิกเงิน</button>
+  <button class="nb" id="nb-dash" onclick="goTab('dash')"><span class="ic">📊</span>สรุปเดือน</button>
+  <button class="nb" id="nb-exp" onclick="goTab('exp')"><span class="ic">📤</span>Excel</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONSTANTS ───────────────────────────────────────────────
+const PH = ['พริม','เฟิร์น','กลองแต๊ก'];
+const ST = ['เมย์','นุ้ย'];
+const ALL = [...PH,...ST];
+const OFF = {'เมย์':[0,1],'นุ้ย':[5,6]};
+const R = {ph:160,base:9000,ot:78,ded:52,kd:200,kl:5000};
+const DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+const MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+// ─── STATE ───────────────────────────────────────────────────
+let db = {att:{}, adv:[]};
+let tab = 'att';
+let curDate = today();
+let dm = new Date().getMonth()+1;
+let dy = new Date().getFullYear();
+
+// attendance form state
+let as = { ph:{}, st:[] };
+
+// ─── STORAGE ─────────────────────────────────────────────────
+function loadDB(){
+  try{
+    const a=localStorage.getItem('rx_att3');
+    const b=localStorage.getItem('rx_adv3');
+    if(a) db.att=JSON.parse(a);
+    if(b) db.adv=JSON.parse(b);
+  }catch(e){}
+}
+function saveDB(){
+  localStorage.setItem('rx_att3',JSON.stringify(db.att));
+  localStorage.setItem('rx_adv3',JSON.stringify(db.adv));
+}
+
+// ─── UTILS ───────────────────────────────────────────────────
+function today(){ return new Date().toISOString().slice(0,10); }
+function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+function q(id){ return document.getElementById(id); }
+
+function thDate(ds){
+  const d=new Date(ds+'T00:00:00');
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()+543}`;
+}
+function thDateFull(ds){
+  const d=new Date(ds+'T00:00:00');
+  return `วัน${DAYS[d.getDay()]}ที่ ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()+543}`;
+}
+function dow(ds){ return new Date(ds+'T00:00:00').getDay(); }
+function isOff(name,ds){ return (OFF[name]||[]).includes(dow(ds)); }
+function hms(s,e){
+  if(!s||!e) return 0;
+  const[sh,sm]=s.split(':').map(Number);
+  const[eh,em]=e.split(':').map(Number);
+  return Math.max(0,((eh*60+em)-(sh*60+sm))/60);
+}
+function fm(n){ return Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fn(n){ return Number(n).toLocaleString('th-TH',{minimumFractionDigits:0,maximumFractionDigits:2}); }
+
+function toast(msg,dur=2600){
+  const t=q('toast');
+  t.textContent=msg;
+  t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),dur);
+}
+
+function monthDates(y,m){
+  const r=[];
+  const days=new Date(y,m,0).getDate();
+  for(let d=1;d<=days;d++) r.push(`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+  return r;
+}
+
+function statusLabel(s){
+  return {present:'มา',half:'ลาครึ่ง',absent_leave:'ลา',absent:'ขาด',off:'หยุด'}[s]||s;
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────
+function goTab(t){
+  tab=t;
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  q('pg-'+t).classList.add('on');
+  q('nb-'+t).classList.add('on');
+  if(t==='att'){ initAS(curDate); renderAtt(); }
+  if(t==='adv') renderAdv();
+  if(t==='dash') renderDash();
+  if(t==='exp') renderExp();
+}
+
+// ─── CALC ENGINE ─────────────────────────────────────────────
+function calcPh(name,y,m){
+  let hours=0,days=0;
+  for(const ds of monthDates(y,m)){
+    const rec=db.att[ds];
+    if(!rec) continue;
+    const p=(rec.ph||[]).find(x=>x.name===name);
+    if(p){ hours+=Number(p.hours)||0; days++; }
+  }
+  let sal=hours*R.ph;
+  if(name==='กลองแต๊ก') sal+=days*R.kd+R.kl;
+  return {hours,days,sal};
+}
+
+function calcSt(name,y,m){
+  let dedH=0,otH=0,workDays=0,abDays=0;
+  for(const ds of monthDates(y,m)){
+    const rec=db.att[ds];
+    if(!rec) continue;
+    const s=(rec.st||[]).find(x=>x.name===name);
+    if(!s) continue;
+    const st=s.status;
+    if(st==='present'){ workDays++; otH+=Number(s.otHours)||0; }
+    else if(st==='half'){ workDays++; dedH+=4; abDays+=0.5; otH+=Number(s.otHours)||0; }
+    else if(st==='absent_leave'||st==='absent'){ dedH+=8; abDays++; }
+    // 'off' = nothing
+  }
+  const ym=`${y}-${String(m).padStart(2,'0')}`;
+  const advTot=db.adv.filter(a=>a.name===name&&a.date.startsWith(ym)).reduce((s,a)=>s+Number(a.amount),0);
+  const dedAmt=dedH*R.ded;
+  const otAmt=otH*R.ot;
+  const sal=R.base-dedAmt+otAmt-advTot;
+  return {workDays,abDays,dedH,dedAmt,otH,otAmt,advTot,sal};
+}
+
+// ─── PAGE 1: ATTENDANCE ──────────────────────────────────────
+function initAS(ds){
+  const rec=db.att[ds];
+  as.ph={};
+  for(const n of PH){
+    as.ph[n]={on:false,hours:'',t1:'',t2:''};
+  }
+  if(rec&&rec.ph){
+    for(const p of rec.ph){
+      if(as.ph[p.name]) as.ph[p.name]={on:true,hours:p.hours,t1:p.t1||'',t2:p.t2||''};
+    }
+  }
+  const defSt=[
+    {name:'เมย์',shift:'morning',status:isOff('เมย์',ds)?'off':'present',otHours:0,otEnd:'',note:''},
+    {name:'นุ้ย',shift:'afternoon',status:isOff('นุ้ย',ds)?'off':'present',otHours:0,otEnd:'',note:''}
+  ];
+  if(rec&&rec.st&&rec.st.length>0){
+    as.st=rec.st.map(s=>({name:s.name||'',shift:s.shift||'morning',status:s.status||'present',
+      otHours:Number(s.otHours)||0,otEnd:s.otEnd||'',note:s.note||''}));
+    while(as.st.length<2) as.st.push(defSt[as.st.length]);
+  } else {
+    as.st=defSt;
+  }
+}
+
+function renderAtt(){
+  const d=new Date(curDate+'T00:00:00');
+  const pg=q('pg-att');
+  pg.innerHTML=`
+<div class="card">
+  <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px">
+    <div style="flex:1"><label>เลือกวันที่</label>
+      <input type="date" id="att-dt" value="${curDate}" onchange="changeDt(this.value)">
+    </div>
+    <button class="today-btn" onclick="changeDt('${today()}')">วันนี้</button>
+  </div>
+  <div style="text-align:center;padding:10px;background:var(--primary-light);border-radius:9px">
+    <div style="font-size:18px;font-weight:700;color:var(--primary)">${thDate(curDate)}</div>
+    <div style="font-size:13px;color:var(--text2)">วัน${DAYS[d.getDay()]}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ct">👩‍⚕️ เภสัชกร</div>
+  ${PH.map(n=>buildPc(n)).join('')}
+</div>
+
+<div class="card">
+  <div class="ct">👥 พนักงาน</div>
+  ${[0,1].map(i=>buildSc(i)).join('')}
+</div>
+
+<button class="btn bp bfull" style="font-size:16px;padding:14px;margin-bottom:14px" onclick="saveAtt()">💾 บันทึกข้อมูล</button>
+
+<div class="card">
+  <div class="ct">📅 ประวัติ 10 วันล่าสุด</div>
+  ${buildHistory()}
+</div>`;
+}
+
+function buildPc(n){
+  const s=as.ph[n];
+  const qts=[{l:'3.5 ชม.',v:3.5},{l:'8.5 ชม.',v:8.5},{l:'12 ชม.',v:12}];
+  const calcTxt=s.hours?(` = ${fm(s.hours*R.ph)} บาท`):'';
+  return `
+<div class="pc ${s.on?'on':''}" id="pc-${n}">
+  <div class="pc-hdr" onclick="togPh('${n}')">
+    <input type="checkbox" ${s.on?'checked':''} onclick="event.stopPropagation();togPh('${n}')">
+    <span class="pc-name">${n}</span>
+    ${n==='กลองแต๊ก'?'<span class="badge bp2">+เบี้ย+ใบประกอบ</span>':''}
+  </div>
+  <div class="pc-body">
+    <div class="fr">
+      <label>จำนวนชั่วโมง</label>
+      <input type="number" id="ph-h-${n}" value="${s.hours||''}" min="0" max="24" step="0.5" placeholder="0.0"
+        oninput="phHChg('${n}',this.value)">
+      <div class="qb-wrap">
+        ${qts.map(q=>`<button class="qb ${Number(s.hours)===q.v?'on':''}" onclick="phHSet('${n}',${q.v})">${q.l}</button>`).join('')}
+      </div>
+    </div>
+    <div class="fr2">
+      <div><label>เวลาเข้า</label>
+        <input type="time" id="ph-t1-${n}" value="${s.t1||''}" oninput="phTChg('${n}')"></div>
+      <div><label>เวลาออก</label>
+        <input type="time" id="ph-t2-${n}" value="${s.t2||''}" oninput="phTChg('${n}')"></div>
+    </div>
+    <div class="hint" id="ph-calc-${n}">${s.hours?`${fn(s.hours)} ชม.${calcTxt}`:'กรอกเวลา หรือเลือกชั่วโมง'}</div>
+  </div>
+</div>`;
+}
+
+function buildSc(i){
+  const s=as.st[i];
+  const stList=[
+    {k:'present',l:'มาทำงาน'},{k:'half',l:'ลาครึ่งวัน'},
+    {k:'absent_leave',l:'ลาเต็มวัน'},{k:'absent',l:'ขาด'},{k:'off',l:'วันหยุด'}
+  ];
+  const working=['present','half'].includes(s.status);
+  let prevTxt='';
+  if(s.name){
+    if(s.status==='off') prevTxt='วันหยุด (ไม่หักเงิน)';
+    else if(s.status==='present') prevTxt=`มาทำงาน${s.otHours>0?' + OT '+fn(s.otHours)+' ชม. (+'+fm(s.otHours*R.ot)+' ฿)':''}`;
+    else if(s.status==='half') prevTxt=`ลาครึ่งวัน หัก ${fm(4*R.ded)} ฿${s.otHours>0?' + OT '+fn(s.otHours)+' ชม.':''}`;
+    else if(s.status==='absent_leave') prevTxt=`ลาเต็มวัน หัก ${fm(8*R.ded)} ฿`;
+    else if(s.status==='absent') prevTxt=`ขาด หัก ${fm(8*R.ded)} ฿`;
+  }
+  return `
+<div class="sc">
+  <div class="sc-title">พนักงานคนที่ ${i+1}</div>
+  <div class="fr">
+    <label>ชื่อ</label>
+    <select onchange="stChg(${i},'name',this.value)">
+      <option value="">-- เลือกชื่อ --</option>
+      ${ST.map(n=>`<option value="${n}" ${s.name===n?'selected':''}>${n}</option>`).join('')}
+    </select>
+  </div>
+  <div class="fr">
+    <label>สถานะ</label>
+    <div class="stbwrap">
+      ${stList.map(x=>`<button class="stb ${s.status===x.k?'on':''}" data-s="${x.k}"
+        onclick="stChg(${i},'status','${x.k}')">${x.l}</button>`).join('')}
+    </div>
+  </div>
+  ${working?`
+  <div class="fr">
+    <label>กะการทำงาน</label>
+    <div class="shwrap">
+      <button class="shb ${s.shift==='morning'?'on':''}" onclick="stChg(${i},'shift','morning')">
+        กะเช้า<br><small style="font-size:11px">09:00–18:00</small></button>
+      <button class="shb ${s.shift==='afternoon'?'on':''}" onclick="stChg(${i},'shift','afternoon')">
+        กะเที่ยง<br><small style="font-size:11px">12:00–21:00</small></button>
+    </div>
+  </div>
+  <div class="ot-sec">
+    <label>OT (ถ้ามี)</label>
+    <div class="fr2">
+      <div><label style="font-size:12px">เวลาออกจริง</label>
+        <input type="time" id="ot-end-${i}" value="${s.otEnd||''}" oninput="otTChg(${i},this.value)"></div>
+      <div><label style="font-size:12px">หรือ ชม. OT โดยตรง</label>
+        <input type="number" id="ot-h-${i}" value="${s.otHours||''}" min="0" max="3" step="0.5"
+          placeholder="0" oninput="stChg(${i},'otHours',Number(this.value))"></div>
+    </div>
+    <div class="hint" id="ot-calc-${i}">${s.otHours>0?`OT ${fn(s.otHours)} ชม. = ${fm(s.otHours*R.ot)} บาท`:''}</div>
+  </div>`:''}
+  <div class="fr" style="margin-top:8px">
+    <label>หมายเหตุ</label>
+    <input type="text" placeholder="..." value="${s.note||''}" oninput="stChg(${i},'note',this.value)">
+  </div>
+  ${prevTxt&&s.name?`<div class="hint" style="color:var(--primary);margin-top:4px">▸ ${s.name}: ${prevTxt}</div>`:''}
+</div>`;
+}
+
+function buildHistory(){
+  const entries=Object.keys(db.att).sort().reverse().slice(0,10);
+  if(!entries.length) return '<div class="empty"><div class="eic">📭</div><div>ยังไม่มีข้อมูล</div></div>';
+  return entries.map(ds=>{
+    const rec=db.att[ds];
+    const phs=(rec.ph||[]).map(p=>`${p.name} ${fn(p.hours)}ชม.`).join(', ');
+    const sts=(rec.st||[]).filter(s=>s.name).map(s=>`${s.name}(${statusLabel(s.status)})`).join(', ');
+    return `<div class="he">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="he-date">${thDateFull(ds)}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn bou bsm" onclick="changeDt('${ds}');window.scrollTo(0,0)">แก้ไข</button>
+          <button class="btn br bsm" onclick="delAtt('${ds}')">ลบ</button>
+        </div>
+      </div>
+      ${phs?`<div class="hint">🧑‍⚕️ ${phs}</div>`:''}
+      ${sts?`<div class="hint">👥 ${sts}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function changeDt(ds){ curDate=ds; initAS(ds); renderAtt(); }
+function togPh(n){ as.ph[n].on=!as.ph[n].on; renderAtt(); }
+function phHSet(n,v){ as.ph[n].hours=v; as.ph[n].t1=''; as.ph[n].t2=''; renderAtt(); }
+function phHChg(n,v){
+  as.ph[n].hours=Number(v)||0;
+  const el=q(`ph-calc-${n}`);
+  if(el&&as.ph[n].hours) el.textContent=`${fn(as.ph[n].hours)} ชม. = ${fm(as.ph[n].hours*R.ph)} บาท`;
+}
+function phTChg(n){
+  const t1=q(`ph-t1-${n}`)?.value||'';
+  const t2=q(`ph-t2-${n}`)?.value||'';
+  const h=hms(t1,t2);
+  as.ph[n].t1=t1; as.ph[n].t2=t2;
+  if(h>0){
+    const hr=Math.round(h*10)/10;
+    as.ph[n].hours=hr;
+    const inp=q(`ph-h-${n}`);
+    if(inp) inp.value=hr;
+    const el=q(`ph-calc-${n}`);
+    if(el) el.textContent=`${fn(hr)} ชม. = ${fm(hr*R.ph)} บาท`;
+  }
+}
+function stChg(i,f,v){
+  as.st[i][f]=v;
+  if(f==='status'&&!['present','half'].includes(v)){ as.st[i].otHours=0; as.st[i].otEnd=''; }
+  renderAtt();
+}
+function otTChg(i,endT){
+  as.st[i].otEnd=endT;
+  const shiftEnd=as.st[i].shift==='morning'?'18:00':'21:00';
+  const h=Math.max(0,Math.min(3,Math.round(hms(shiftEnd,endT)*10)/10));
+  as.st[i].otHours=h;
+  const inp=q(`ot-h-${i}`);
+  if(inp) inp.value=h||'';
+  const el=q(`ot-calc-${i}`);
+  if(el) el.textContent=h>0?`OT ${fn(h)} ชม. = ${fm(h*R.ot)} บาท`:'';
+}
+
+function saveAtt(){
+  const ph=[];
+  for(const n of PH){
+    const s=as.ph[n];
+    if(s.on){
+      if(!s.hours||s.hours<=0){ toast(`⚠️ ระบุชั่วโมงของ ${n} ด้วย`); return; }
+      ph.push({name:n,hours:Number(s.hours),t1:s.t1,t2:s.t2});
+    }
+  }
+  const st=as.st.filter(s=>s.name).map(s=>({...s,otHours:Number(s.otHours)||0}));
+  if(!ph.length&&!st.length){ toast('⚠️ ยังไม่ได้กรอกข้อมูลใดๆ'); return; }
+  db.att[curDate]={ph,st};
+  saveDB();
+  toast('✅ บันทึกข้อมูลแล้ว');
+  renderAtt();
+}
+
+function delAtt(ds){
+  if(confirm(`ลบข้อมูล ${thDate(ds)} ?`)){
+    delete db.att[ds]; saveDB(); toast('🗑️ ลบแล้ว'); initAS(curDate); renderAtt();
+  }
+}
+
+// ─── PAGE 2: ADVANCES ────────────────────────────────────────
+function renderAdv(){
+  const ym=`${dy}-${String(dm).padStart(2,'0')}`;
+  const list=db.adv.filter(a=>a.date.startsWith(ym)).sort((a,b)=>b.date.localeCompare(a.date));
+  const byPerson={};
+  for(const a of list) byPerson[a.name]=(byPerson[a.name]||0)+Number(a.amount);
+  const pg=q('pg-adv');
+  pg.innerHTML=`
+<div class="card">
+  <div class="ct">💵 บันทึกการเบิกเงินล่วงหน้า</div>
+  <div class="fr"><label>วันที่เบิก</label><input type="date" id="adv-dt" value="${today()}"></div>
+  <div class="fr"><label>ชื่อพนักงาน</label>
+    <select id="adv-nm">
+      <option value="">-- เลือกชื่อ --</option>
+      ${ALL.map(n=>`<option value="${n}">${n}</option>`).join('')}
+    </select>
+  </div>
+  <div class="fr"><label>จำนวนเงิน (บาท)</label>
+    <input type="number" id="adv-am" placeholder="0.00" min="0" step="0.01"></div>
+  <div class="fr"><label>หมายเหตุ</label>
+    <input type="text" id="adv-nt" placeholder="ระบุเหตุผล..."></div>
+  <button class="btn bp bfull" onclick="saveAdv()">💾 บันทึกการเบิก</button>
+</div>
+
+<div class="card">
+  <div class="ct">📋 รายการเดือน ${MONTHS[dm-1]} ${dy+543}</div>
+  <div class="msel">
+    <select onchange="chMon(this.value,null)">
+      ${MONTHS.map((m,i)=>`<option value="${i+1}" ${dm===i+1?'selected':''}>${m}</option>`).join('')}
+    </select>
+    <select onchange="chMon(null,this.value)">
+      ${[2024,2025,2026,2027].map(y=>`<option value="${y}" ${dy===y?'selected':''}>${y+543}</option>`).join('')}
+    </select>
+  </div>
+  ${!list.length?`<div class="empty"><div class="eic">💵</div><div>ยังไม่มีรายการ</div></div>`:`
+  <div>
+    ${list.map(a=>`
+    <div class="ai">
+      <div><div class="ai-name">${a.name}</div>
+        <div class="ai-det">${thDate(a.date)}${a.note?' · '+a.note:''}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="ai-amt">${fm(Number(a.amount))} ฿</div>
+        <button class="btn br bsm" onclick="delAdv('${a.id}')">ลบ</button>
+      </div>
+    </div>`).join('')}
+  </div>
+  ${Object.keys(byPerson).length?`
+  <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+    <strong style="font-size:13px">รวมแยกตามคน:</strong>
+    ${Object.entries(byPerson).map(([n,v])=>`
+    <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px">
+      <span>${n}</span><strong style="color:var(--red)">${fm(v)} ฿</strong>
+    </div>`).join('')}
+  </div>`:''}`}
+</div>`;
+}
+
+function saveAdv(){
+  const dt=q('adv-dt').value;
+  const nm=q('adv-nm').value;
+  const am=Number(q('adv-am').value);
+  const nt=q('adv-nt').value;
+  if(!dt||!nm||!am||am<=0){ toast('⚠️ กรุณากรอกข้อมูลให้ครบ'); return; }
+  db.adv.push({id:genId(),date:dt,name:nm,amount:am,note:nt});
+  saveDB(); toast('✅ บันทึกการเบิกแล้ว'); renderAdv();
+}
+
+function delAdv(id){
+  if(confirm('ลบรายการนี้?')){ db.adv=db.adv.filter(a=>a.id!==id); saveDB(); toast('🗑️ ลบแล้ว'); renderAdv(); }
+}
+
+// ─── PAGE 3: DASHBOARD ───────────────────────────────────────
+function renderDash(){
+  const phr=PH.map(n=>({n,...calcPh(n,dy,dm)}));
+  const str=ST.map(n=>({n,...calcSt(n,dy,dm)}));
+  const totPh=phr.reduce((s,r)=>s+r.sal,0);
+  const totSt=str.reduce((s,r)=>s+r.sal,0);
+  const grand=totPh+totSt;
+  const pg=q('pg-dash');
+  pg.innerHTML=`
+<div class="card">
+  <div class="ct">📊 สรุปเงินเดือน</div>
+  <div class="msel">
+    <select onchange="chMon(this.value,null)">
+      ${MONTHS.map((m,i)=>`<option value="${i+1}" ${dm===i+1?'selected':''}>${m}</option>`).join('')}
+    </select>
+    <select onchange="chMon(null,this.value)">
+      ${[2024,2025,2026,2027].map(y=>`<option value="${y}" ${dy===y?'selected':''}>${y+543}</option>`).join('')}
+    </select>
+  </div>
+  <div style="text-align:center;padding:10px 0">
+    <div style="font-size:13px;color:var(--text2)">ยอดรวมทั้งหมดเดือน${MONTHS[dm-1]}</div>
+    <div style="font-size:28px;font-weight:700;color:var(--primary)">${fm(grand)} บาท</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ct">👩‍⚕️ สรุปเภสัชกร</div>
+  <div class="twrap"><table>
+    <thead><tr><th>ชื่อ</th><th>วัน</th><th>ชั่วโมง</th><th>เงินได้รับ</th></tr></thead>
+    <tbody>
+      ${phr.map(r=>`<tr>
+        <td><strong>${r.n}</strong></td>
+        <td>${r.days} วัน</td>
+        <td>${fn(r.hours)} ชม.</td>
+        <td><strong>${fm(r.sal)} ฿</strong></td>
+      </tr>`).join('')}
+      <tr style="background:var(--primary-light)">
+        <td colspan="3"><strong>รวมเภสัชกร</strong></td>
+        <td><strong>${fm(totPh)} ฿</strong></td>
+      </tr>
+    </tbody>
+  </table></div>
+  <div class="hint" style="margin-top:8px">* กลองแต๊ก รวมเบี้ย ${R.kd} ฿/วัน + ใบประกอบ ${fm(R.kl)} ฿/เดือน</div>
+</div>
+
+<div class="card">
+  <div class="ct">👥 สรุปพนักงาน (ฐาน ${fm(R.base)} ฿/เดือน)</div>
+  ${str.map(r=>`
+  <div class="emp-block">
+    <div class="emp-block-name">${r.n}</div>
+    <div class="emp-grid">
+      <div>วันขาด/ลา: <strong>${fn(r.abDays)} วัน</strong></div>
+      <div>ชม.ขาด/ลา: <strong>${fn(r.dedH)} ชม.</strong></div>
+      <div>ยอดหัก: <strong style="color:var(--red)">-${fm(r.dedAmt)} ฿</strong></div>
+      <div>ชม.OT: <strong>${fn(r.otH)} ชม.</strong></div>
+      <div>เงิน OT: <strong style="color:var(--green)">+${fm(r.otAmt)} ฿</strong></div>
+      <div>ยอดเบิก: <strong style="color:var(--orange)">-${fm(r.advTot)} ฿</strong></div>
+    </div>
+    <div class="net-line">
+      <span>เงินที่ได้รับจริง</span>
+      <span class="net-amt">${fm(r.sal)} ฿</span>
+    </div>
+    <div class="hint">= 9,000${r.dedAmt>0?' − '+fm(r.dedAmt):''}${r.otAmt>0?' + '+fm(r.otAmt):''}${r.advTot>0?' − '+fm(r.advTot):''}</div>
+  </div>`).join('')}
+</div>
+
+<div class="card">
+  <div class="ct">⚙️ จัดการข้อมูล</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn bou" onclick="addSample()">📝 เพิ่มข้อมูลทดสอบ</button>
+    <button class="btn br" onclick="clearAll()">🗑️ ล้างข้อมูลทั้งหมด</button>
+  </div>
+</div>`;
+}
+
+// ─── PAGE 4: EXPORT ──────────────────────────────────────────
+function renderExp(){
+  const pg=q('pg-exp');
+  pg.innerHTML=`
+<div class="card">
+  <div class="ct">📤 ส่งออก Excel</div>
+  <div class="msel">
+    <select onchange="chMon(this.value,null)">
+      ${MONTHS.map((m,i)=>`<option value="${i+1}" ${dm===i+1?'selected':''}>${m}</option>`).join('')}
+    </select>
+    <select onchange="chMon(null,this.value)">
+      ${[2024,2025,2026,2027].map(y=>`<option value="${y}" ${dy===y?'selected':''}>${y+543}</option>`).join('')}
+    </select>
+  </div>
+  <div style="background:var(--primary-light);border-radius:9px;padding:13px;margin-bottom:14px;font-size:14px">
+    <strong>ไฟล์ Excel จะมี 2 ชีต:</strong>
+    <ul style="padding-left:18px;margin-top:6px;line-height:2">
+      <li>ชีต 1: ตารางการเข้างานรายวัน (ทุกวันในเดือน)</li>
+      <li>ชีต 2: สรุปเงินเดือนรายคน</li>
+    </ul>
+  </div>
+  <button class="btn bg bfull" style="font-size:16px;padding:14px" onclick="doExport()">
+    📊 ดาวน์โหลด Excel (${MONTHS[dm-1]} ${dy+543})
+  </button>
+</div>
+
+<div class="card">
+  <div class="ct">⚙️ จัดการข้อมูล</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn bou" onclick="addSample()">📝 เพิ่มข้อมูลทดสอบ</button>
+    <button class="btn br" onclick="clearAll()">🗑️ ล้างข้อมูลทั้งหมด</button>
+  </div>
+</div>`;
+}
+
+function chMon(m,y){
+  if(m!==null) dm=Number(m);
+  if(y!==null) dy=Number(y);
+  if(tab==='adv') renderAdv();
+  if(tab==='dash') renderDash();
+  if(tab==='exp') renderExp();
+}
+
+// ─── EXCEL EXPORT ────────────────────────────────────────────
+function doExport(){
+  if(typeof XLSX==='undefined'){ toast('⚠️ ไม่พบไลบรารี XLSX — ต้องเชื่อมต่ออินเทอร์เน็ต'); return; }
+  const wb=XLSX.utils.book_new();
+
+  // Sheet 1: daily attendance
+  const hdr=['วันที่','วัน',
+    'พริม (ชม.)','เฟิร์น (ชม.)','กลองแต๊ก (ชม.)',
+    'พนักงาน1','กะ1','สถานะ1','OT1(ชม.)','หมายเหตุ1',
+    'พนักงาน2','กะ2','สถานะ2','OT2(ชม.)','หมายเหตุ2'];
+  const rows=[hdr];
+  for(const ds of monthDates(dy,dm)){
+    const rec=db.att[ds];
+    const d=new Date(ds+'T00:00:00');
+    const gH=n=>{if(!rec)return'';const p=(rec.ph||[]).find(x=>x.name===n);return p?p.hours:'';};
+    const gS=i=>{
+      if(!rec||!rec.st||!rec.st[i]) return['','','','',''];
+      const s=rec.st[i];
+      const sh=s.shift==='morning'?'กะเช้า 09-18':'กะเที่ยง 12-21';
+      return[s.name||'',sh,statusLabel(s.status),s.otHours||0,s.note||''];
+    };
+    const [s1n,s1sh,s1st,s1ot,s1nt]=gS(0);
+    const [s2n,s2sh,s2st,s2ot,s2nt]=gS(1);
+    rows.push([ds,DAYS[d.getDay()],gH('พริม'),gH('เฟิร์น'),gH('กลองแต๊ก'),
+      s1n,s1sh,s1st,s1ot,s1nt, s2n,s2sh,s2st,s2ot,s2nt]);
+  }
+  const ws1=XLSX.utils.aoa_to_sheet(rows);
+  ws1['!cols']=[{wch:13},{wch:10},{wch:12},{wch:12},{wch:14},{wch:8},{wch:14},{wch:10},{wch:8},{wch:16},{wch:8},{wch:14},{wch:10},{wch:8},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws1,'ตารางเข้างานรายวัน');
+
+  // Sheet 2: salary summary
+  const phr=PH.map(n=>({n,...calcPh(n,dy,dm)}));
+  const str=ST.map(n=>({n,...calcSt(n,dy,dm)}));
+  const s2=[
+    [`สรุปเงินเดือน เดือน${MONTHS[dm-1]} ${dy+543}`],[],
+    ['เภสัชกร'],
+    ['ชื่อ','จำนวนวัน','ชั่วโมงรวม','ค่าแรง (ชม.×160)','เบี้ยพิเศษ (กลองแต๊ก)','ค่าใบประกอบ (กลองแต๊ก)','รวม'],
+    ...phr.map(r=>[r.n,r.days,r.hours,r.hours*R.ph,
+      r.n==='กลองแต๊ก'?r.days*R.kd:0,r.n==='กลองแต๊ก'?R.kl:0,r.sal]),
+    [],
+    ['พนักงาน'],
+    ['ชื่อ','เงินเดือนฐาน','วันขาด/ลา','ชม.ขาด/ลา','ยอดหัก (ชม.×52)','ชม.OT','เงิน OT (ชม.×78)','ยอดเบิก','เงินที่ได้รับจริง'],
+    ...str.map(r=>[r.n,R.base,r.abDays,r.dedH,r.dedAmt,r.otH,r.otAmt,r.advTot,r.sal])
+  ];
+  const ws2=XLSX.utils.aoa_to_sheet(s2);
+  ws2['!cols']=Array(9).fill({wch:18});
+  XLSX.utils.book_append_sheet(wb,ws2,'สรุปเงินเดือน');
+
+  XLSX.writeFile(wb,`เงินเดือน_${MONTHS[dm-1]}_${dy+543}.xlsx`);
+  toast('✅ ดาวน์โหลด Excel แล้ว');
+}
+
+// ─── SAMPLE DATA ─────────────────────────────────────────────
+function addSample(){
+  if(!confirm('เพิ่มข้อมูลทดสอบสำหรับเดือนนี้?')) return;
+  const y=dy,m=dm;
+  const days=new Date(y,m,0).getDate();
+  const end=Math.min(days,14);
+  for(let d=1;d<=end;d++){
+    const ds=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dw=new Date(ds+'T00:00:00').getDay();
+    // pharmacists
+    const ph=[];
+    const pool=[...PH];
+    const n2=Math.random()>.5?2:1;
+    for(let j=0;j<n2;j++) ph.push({name:pool[j],hours:[3.5,8.5,12][j%3],t1:'',t2:''});
+    // staff
+    const mayOff=[0,1].includes(dw);
+    const nuiOff=[5,6].includes(dw);
+    const st=[
+      {name:'เมย์',shift:'morning',status:mayOff?'off':Math.random()>.85?'absent':'present',
+        otHours:!mayOff&&Math.random()>.7?1:0,otEnd:'',note:''},
+      {name:'นุ้ย',shift:'afternoon',status:nuiOff?'off':Math.random()>.85?'half':'present',
+        otHours:!nuiOff&&Math.random()>.75?1.5:0,otEnd:'',note:''}
+    ];
+    db.att[ds]={ph,st};
+  }
+  const mp=`${y}-${String(m).padStart(2,'0')}`;
+  db.adv.push({id:genId(),date:`${mp}-05`,name:'เมย์',amount:500,note:'เบิกล่วงหน้า'});
+  db.adv.push({id:genId(),date:`${mp}-10`,name:'นุ้ย',amount:1000,note:'ค่าใช้จ่ายฉุกเฉิน'});
+  saveDB(); toast('✅ เพิ่มข้อมูลทดสอบแล้ว');
+  if(tab==='att'){ initAS(curDate); renderAtt(); }
+  else if(tab==='dash') renderDash();
+  else if(tab==='adv') renderAdv();
+}
+
+function clearAll(){
+  if(!confirm('⚠️ ล้างข้อมูลทั้งหมด? ไม่สามารถกู้คืนได้')) return;
+  if(!confirm('ยืนยันอีกครั้ง: ลบข้อมูลทั้งหมดจริงหรือ?')) return;
+  db={att:{},adv:[]}; saveDB(); toast('🗑️ ล้างข้อมูลแล้ว');
+  if(tab==='att'){ initAS(curDate); renderAtt(); }
+  else if(tab==='dash') renderDash();
+  else if(tab==='adv') renderAdv();
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function(){
+  try {
+    loadDB();
+    const _d=new Date();
+    q('hdr-date').textContent=`วัน${DAYS[_d.getDay()]}ที่ ${_d.getDate()} ${MONTHS[_d.getMonth()]} ${_d.getFullYear()+543}`;
+    initAS(curDate);
+    renderAtt();
+  } catch(e) {
+    document.body.innerHTML='<div style="padding:20px;font-size:14px;color:red"><b>เกิดข้อผิดพลาด:</b><br>'+e.message+'<br><br>'+e.stack+'</div>';
+  }
+});
+</script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js');
+}
+</script>
+</body>
+</html>

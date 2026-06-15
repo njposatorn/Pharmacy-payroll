@@ -1,0 +1,17 @@
+{
+  "name": "ระบบเข้างานร้านยา",
+  "short_name": "เข้างาน",
+  "description": "บันทึกการเข้างานและคำนวณเงินเดือนร้านยา",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1565C0",
+  "theme_color": "#1565C0",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
