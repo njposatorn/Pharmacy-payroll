@@ -300,9 +300,14 @@ function initAS(ds){
       if(as.ph[p.name]) as.ph[p.name]={on:true,hours:p.hours,t1:p.t1||'',t2:p.t2||''};
     }
   }
+  const mayOff=isOff('เมย์',ds), nuiOff=isOff('นุ้ย',ds);
   const defSt=[
-    {name:'เมย์',shift:'morning',status:isOff('เมย์',ds)?'off':'present',otHours:0,otEnd:'',actualStart:'',note:''},
-    {name:'นุ้ย',shift:'afternoon',status:isOff('นุ้ย',ds)?'off':'present',otHours:0,otEnd:'',actualStart:'',note:''}
+    // ถ้านุ้ยหยุด (ศ-ส) → เมย์เป็นกะเช้า+OT อัตโนมัติ
+    {name:'เมย์',shift:nuiOff?'full':'morning',status:mayOff?'off':'present',
+     otHours:nuiOff?3:0,otEnd:'',actualStart:'',note:''},
+    // ถ้าเมย์หยุด (อา-จ) → นุ้ยเป็นกะเช้า+OT อัตโนมัติ
+    {name:'นุ้ย',shift:mayOff?'full':'afternoon',status:nuiOff?'off':'present',
+     otHours:mayOff?3:0,otEnd:'',actualStart:'',note:''}
   ];
   if(rec&&rec.st&&rec.st.length>0){
     as.st=rec.st.map(s=>({name:s.name||'',shift:s.shift||'morning',status:s.status||'present',
