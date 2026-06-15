@@ -313,6 +313,15 @@ function initAS(ds){
     as.st=rec.st.map(s=>({name:s.name||'',shift:s.shift||'morning',status:s.status||'present',
       otHours:Number(s.otHours)||0,otEnd:s.otEnd||'',actualStart:s.actualStart||'',note:s.note||''}));
     while(as.st.length<2) as.st.push(defSt[as.st.length]);
+    // แก้กะถ้าอีกคนหยุด (รองรับข้อมูลเก่าที่บันทึกก่อนมีฟีเจอร์นี้)
+    for(let idx=0;idx<2;idx++){
+      const other=as.st[1-idx];
+      const me=as.st[idx];
+      if(other&&other.status==='off'&&['present','half'].includes(me.status)&&me.shift!=='full'){
+        me.shift='full';
+        if(!me.otHours) me.otHours=3;
+      }
+    }
   } else {
     as.st=defSt;
   }
