@@ -516,13 +516,30 @@ function phTChg(n){
     if(el) el.textContent=`${fn(hr)} ชม. = ${fm(hr*R.ph)} บาท`;
   }
 }
+const DEF_SHIFT = {'เมย์':'morning','นุ้ย':'afternoon'};
+
 function stChg(i,f,v){
+  const prev=as.st[i][f];
   as.st[i][f]=v;
   if(f==='status'&&!['present','half'].includes(v)){ as.st[i].otHours=0; as.st[i].otEnd=''; as.st[i].actualStart=''; }
   if(f==='shift'){
     if(v==='full'){ as.st[i].otHours=3; as.st[i].otEnd=''; }
     else { as.st[i].otHours=0; as.st[i].otEnd=''; }
     as.st[i].actualStart='';
+  }
+  // auto-switch อีกคนเป็นกะเช้า+OT เมื่อคนนึงหยุด
+  if(f==='status'){
+    const j=1-i;
+    const other=as.st[j];
+    if(other&&other.name){
+      if(v==='off'&&['present','half'].includes(other.status)){
+        // คนนึงหยุด → อีกคนเป็นกะเช้า+OT
+        other.shift='full'; other.otHours=3; other.otEnd='';
+      } else if(prev==='off'&&['present','half'].includes(other.status)&&other.shift==='full'){
+        // ยกเลิก off → อีกคนกลับกะปกติ
+        other.shift=DEF_SHIFT[other.name]||'morning'; other.otHours=0; other.otEnd='';
+      }
+    }
   }
   renderAtt();
 }
@@ -859,10 +876,6 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-<script>
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js');
-}
-</script>
+<script>if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js'); }</script>
 </body>
 </html>
