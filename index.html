@@ -160,6 +160,10 @@ const DAYS = ['อาทิตย์','จันทร์','อังคาร',
 const MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
   'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
+// ── ตั้งค่า URL จาก Google Apps Script (วางหลัง deploy) ──────
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWdQUNIW6ykE16IMugZSRpJmlviDmDhIKXB6eK5v1KjMvLoAAVIIh0BKyjYs_VWf4u/exec';
+// ─────────────────────────────────────────────────────────────
+
 // ─── STATE ───────────────────────────────────────────────────
 let db = {att:{}, adv:[]};
 let tab = 'att';
@@ -288,6 +292,36 @@ function calcSt(name,y,m){
   return {workDays,abDays,dedH,dedAmt,otH,otAmt,advTot,sal,lateH};
 }
 
+// ─── SCHEDULE INTEGRATION ────────────────────────────────────
+function jsonpFetch(url, done){
+  const fn='__rx_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+  window[fn]=function(data){ delete window[fn]; const s=document.getElementById(fn); if(s)s.remove(); done(null,data); };
+  const s=document.createElement('script');
+  s.id=fn; s.onerror=()=>{ delete window[fn]; s.remove(); done(new Error('net')); };
+  s.src=url+(url.includes('?')?'&':'?')+'cb='+fn;
+  document.head.appendChild(s);
+}
+
+function fetchSchedule(ds){
+  if(!SCRIPT_URL) return;
+  const url=`${SCRIPT_URL}?action=get&year=${ds.slice(0,4)}&month=${parseInt(ds.slice(5,7))}`;
+  jsonpFetch(url,function(err,data){
+    if(err||!data) return;
+    const list=data[ds];
+    if(!list||!list.length) return;
+    const SLOT_H={full:12,morning:8.5,afternoon:3.5};
+    let changed=false;
+    for(const b of list){
+      if(as.ph[b.name]!==undefined && !as.ph[b.name].on){
+        as.ph[b.name].on=true;
+        as.ph[b.name].hours=SLOT_H[b.slot]||b.hours||0;
+        changed=true;
+      }
+    }
+    if(changed){ renderAtt(); toast('📅 โหลดตารางจองแล้ว'); }
+  });
+}
+
 // ─── PAGE 1: ATTENDANCE ──────────────────────────────────────
 function initAS(ds){
   const rec=db.att[ds];
@@ -345,7 +379,10 @@ function renderAtt(){
 </div>
 
 <div class="card">
-  <div class="ct">👩‍⚕️ เภสัชกร</div>
+  <div class="ct" style="justify-content:space-between">
+    <span>👩‍⚕️ เภสัชกร</span>
+    ${SCRIPT_URL?`<button class="btn bou bsm" onclick="loadSched()">📅 โหลดตารางจอง</button>`:''}
+  </div>
   ${PH.map(n=>buildPc(n)).join('')}
 </div>
 
@@ -508,7 +545,8 @@ function buildHistory(){
   }).join('');
 }
 
-function changeDt(ds){ curDate=ds; initAS(ds); renderAtt(); }
+function changeDt(ds){ curDate=ds; initAS(ds); renderAtt(); if(SCRIPT_URL) fetchSchedule(ds); }
+function loadSched(){ fetchSchedule(curDate); toast('⏳ กำลังโหลด...'); }
 function togPh(n){ as.ph[n].on=!as.ph[n].on; renderAtt(); }
 function phHSet(n,v){ as.ph[n].hours=v; as.ph[n].t1=''; as.ph[n].t2=''; renderAtt(); }
 function phHChg(n,v){

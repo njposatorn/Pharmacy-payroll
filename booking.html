@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>จองตารางงาน</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:Thonburi,'Helvetica Neue',sans-serif;background:#F5F5F5;min-height:100vh}
+button{font-family:inherit;-webkit-appearance:none}
+#app{max-width:430px;margin:0 auto;min-height:100vh;background:#fff}
+.hdr{background:#1565C0;padding:14px 16px 18px;color:#fff}
+.hdr-sub{font-size:11px;opacity:.75;margin-bottom:4px;letter-spacing:.5px}
+.hdr-title{font-size:16px;font-weight:600;margin-bottom:12px}
+.name-pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{padding:6px 18px;border-radius:20px;cursor:pointer;font-size:14px;
+  background:rgba(255,255,255,.2);color:#fff;border:none;transition:background .15s,color .15s}
+.pill.active{background:rgba(255,255,255,.95);color:#1565C0;font-weight:600}
+.cal-wrap{background:#fff;border-bottom:1px solid #EEEEEE}
+.cal-hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 8px}
+.cal-month{font-size:15px;font-weight:600;color:#212121}
+.cal-nav{display:flex;gap:4px}
+.nav-btn{width:32px;height:32px;border-radius:50%;border:1px solid #E0E0E0;background:#fff;
+  font-size:17px;cursor:pointer;color:#616161;display:flex;align-items:center;justify-content:center}
+.day-headers{display:grid;grid-template-columns:repeat(7,1fr);padding:0 8px}
+.day-h{text-align:center;font-size:11px;color:#9E9E9E;padding:2px 0;font-weight:500}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:4px 8px 10px}
+.cal-cell{min-height:36px;border-radius:7px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;cursor:pointer;position:relative;
+  font-size:13px;color:#212121;user-select:none;transition:background .1s}
+.cal-cell.empty{cursor:default}
+.cal-cell.past{color:#BDBDBD}
+.cal-cell.has-mine{background:#1565C0;color:#fff;font-weight:600}
+.cal-cell.has-mine.pending{background:#E65100;color:#fff}
+.cal-cell.selected{outline:2px solid #1565C0;outline-offset:-2px}
+.cal-cell.has-mine.selected{outline:2px solid #fff;outline-offset:-2px}
+.cal-cell.delete-pending{background:#FFCCBC;color:#BF360C}
+.cal-dot{width:4px;height:4px;border-radius:50%;background:#90CAF9;position:absolute;bottom:2px}
+.others-label{font-size:9px;color:rgba(255,255,255,.7);position:absolute;bottom:1px;font-weight:400;line-height:1}
+.slot-panel{padding:12px 16px;border-top:1px solid #F0F0F0;background:#FAFAFA}
+.slot-date{font-size:12px;color:#757575;margin-bottom:8px}
+.slot-list{display:flex;flex-direction:column;gap:6px}
+.slot-item{display:flex;justify-content:space-between;align-items:center;
+  padding:11px 13px;border-radius:9px;border:1px solid #E0E0E0;
+  background:#fff;cursor:pointer;transition:all .1s}
+.slot-item.active{border-color:#1565C0;background:#E3F2FD}
+.slot-item.active .slot-lbl{color:#1565C0;font-weight:600}
+.slot-item.active .slot-hrs{color:#1565C0}
+.slot-lbl{font-size:14px;color:#212121}
+.slot-hrs{font-size:12px;color:#9E9E9E}
+.slot-check{font-size:14px;color:#1565C0}
+.others-section{padding:8px 16px 6px;border-top:1px solid #F5F5F5}
+.others-title{font-size:11px;color:#9E9E9E;margin-bottom:5px}
+.others-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;
+  border-radius:10px;background:#F3E5F5;margin-right:4px;margin-bottom:3px}
+.others-chip span{font-size:11px;color:#6A1B9A}
+.list-section{padding:14px 16px}
+.list-title{font-size:13px;font-weight:600;color:#424242;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.list-badge{background:#1565C0;color:#fff;font-size:11px;padding:1px 7px;border-radius:10px}
+.list-item{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid #F5F5F5}
+.list-date{font-size:14px;color:#212121}
+.list-slot{font-size:12px;color:#757575;margin-top:2px}
+.list-pending-badge{font-size:10px;color:#E65100;font-weight:600}
+.del-btn{padding:4px 10px;border-radius:6px;border:1px solid #E0E0E0;
+  background:#fff;font-size:12px;color:#757575;cursor:pointer}
+.del-btn:hover{background:#FFF8F6;border-color:#FFAB91;color:#E64A19}
+.save-bar{position:sticky;bottom:0;padding:12px 16px;background:#fff;
+  border-top:1px solid #E0E0E0;box-shadow:0 -2px 8px rgba(0,0,0,.06)}
+.save-btn{width:100%;padding:13px;border:none;border-radius:9px;
+  background:#1565C0;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+.save-btn:disabled{background:#90CAF9;cursor:not-allowed}
+.empty-msg{text-align:center;padding:24px 0;color:#BDBDBD;font-size:14px}
+.loading-dot{display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:#90CAF9;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:rgba(33,33,33,.88);color:#fff;padding:9px 18px;border-radius:20px;
+  font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
+.no-url{padding:20px 16px;text-align:center;color:#9E9E9E;font-size:13px;line-height:1.6}
+.no-url b{color:#E65100}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// ▶ ตั้งค่า URL จาก Google Apps Script ตรงนี้
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWdQUNIW6ykE16IMugZSRpJmlviDmDhIKXB6eK5v1KjMvLoAAVIIh0BKyjYs_VWf4u/exec';
+// ═══════════════════════════════════════════════════════
+
+const NAMES = ['พริม','เฟิร์น','กลองแต๊ก'];
+const SLOTS = [
+  {id:'full',    label:'09:00–21:00', hours:12},
+  {id:'morning', label:'09:00–17:30', hours:8.5},
+  {id:'afternoon',label:'17:30–21:00', hours:3.5}
+];
+const DAYS  = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const MONTHS_TH   = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                     'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+const today = new Date();
+let S = {
+  name: '',
+  year:  today.getFullYear(),
+  month: today.getMonth() + 1,
+  bookings: {},   // { date: [{name,slot,hours},...] } from Sheets
+  pending:  {},   // { date: {slot,hours,name} | 'delete' }
+  selDate: null,
+  loading: false,
+  saving:  false
+};
+
+// ── JSONP helper ────────────────────────────────────────
+function jsonpFetch(url, done) {
+  const fn = '__rx_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  window[fn] = function(data) {
+    delete window[fn];
+    const s = document.getElementById(fn);
+    if (s) s.remove();
+    done(null, data);
+  };
+  const s = document.createElement('script');
+  s.id = fn;
+  s.onerror = () => { delete window[fn]; s.remove(); done(new Error('ไม่สามารถเชื่อมต่อได้')); };
+  s.src = url + (url.includes('?') ? '&' : '?') + 'cb=' + fn;
+  document.head.appendChild(s);
+}
+
+// ── Data helpers ────────────────────────────────────────
+function myBooking(date) {
+  if (S.pending[date] === 'delete') return null;
+  if (S.pending[date]) return S.pending[date];
+  return (S.bookings[date] || []).find(b => b.name === S.name) || null;
+}
+
+function othersOnDate(date) {
+  const base = (S.bookings[date] || []).filter(b => b.name !== S.name);
+  // if pending delete, don't include the deleted one; pending save already filtered by name
+  return base;
+}
+
+function hasPendingChanges() {
+  return Object.keys(S.pending).length > 0;
+}
+
+// ── Actions ─────────────────────────────────────────────
+function loadBookings() {
+  if (!SCRIPT_URL) return;
+  S.loading = true; render();
+  const url = `${SCRIPT_URL}?action=get&month=${S.month}&year=${S.year}`;
+  jsonpFetch(url, (err, data) => {
+    S.loading = false;
+    if (!err && data && typeof data === 'object') S.bookings = data;
+    else if (err) showToast('โหลดข้อมูลไม่ได้: ' + err.message);
+    render();
+  });
+}
+
+function selectName(n) {
+  if (S.name === n) return;
+  if (hasPendingChanges() && !confirm('มีการเปลี่ยนแปลงที่ยังไม่บันทึก ต้องการออกไหม?')) return;
+  S.name = n; S.pending = {}; S.selDate = null;
+  render(); loadBookings();
+}
+
+function prevMonth() {
+  if (hasPendingChanges() && !confirm('มีการเปลี่ยนแปลงที่ยังไม่บันทึก ต้องการออกไหม?')) return;
+  S.month--; if (S.month < 1) { S.month = 12; S.year--; }
+  S.selDate = null; S.pending = {};
+  loadBookings();
+}
+
+function nextMonth() {
+  if (hasPendingChanges() && !confirm('มีการเปลี่ยนแปลงที่ยังไม่บันทึก ต้องการออกไหม?')) return;
+  S.month++; if (S.month > 12) { S.month = 1; S.year++; }
+  S.selDate = null; S.pending = {};
+  loadBookings();
+}
+
+function tapDate(date) {
+  S.selDate = S.selDate === date ? null : date;
+  render();
+}
+
+function tapSlot(slotId) {
+  if (!S.selDate || !S.name) return;
+  const cur = myBooking(S.selDate);
+  if (cur && cur.slot === slotId) {
+    // tap same slot → delete
+    S.pending[S.selDate] = 'delete';
+  } else {
+    const slot = SLOTS.find(x => x.id === slotId);
+    S.pending[S.selDate] = { slot: slotId, hours: slot.hours, name: S.name };
+  }
+  render();
+}
+
+function removeDate(date) {
+  S.pending[date] = 'delete';
+  if (S.selDate === date) S.selDate = null;
+  render();
+}
+
+function saveAll() {
+  if (!SCRIPT_URL) { showToast('⚠️ ยังไม่ได้ตั้งค่า SCRIPT_URL'); return; }
+  if (!S.name) { showToast('⚠️ เลือกชื่อก่อน'); return; }
+  const entries = Object.entries(S.pending);
+  if (!entries.length) { showToast('ไม่มีการเปลี่ยนแปลง'); return; }
+  S.saving = true; render();
+
+  let done = 0;
+  entries.forEach(([date, val]) => {
+    let url;
+    if (val === 'delete') {
+      url = `${SCRIPT_URL}?action=delete&name=${encodeURIComponent(S.name)}&date=${date}`;
+    } else {
+      url = `${SCRIPT_URL}?action=save&name=${encodeURIComponent(S.name)}&date=${date}&slot=${val.slot}&hours=${val.hours}`;
+    }
+    jsonpFetch(url, (err) => {
+      done++;
+      if (done === entries.length) {
+        S.saving = false; S.pending = {};
+        showToast('✅ บันทึกสำเร็จ');
+        loadBookings();
+      }
+    });
+  });
+}
+
+// ── Toast ────────────────────────────────────────────────
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.opacity = 1;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.opacity = 0, 2800);
+}
+
+// ── Render ───────────────────────────────────────────────
+function render() {
+  document.getElementById('app').innerHTML = html();
+}
+
+function fmtDate(ds) {
+  const dt = new Date(ds + 'T00:00:00');
+  return `${dt.getDate()} ${MONTHS_TH[dt.getMonth()]} ${dt.getFullYear()+543}`;
+}
+
+function html() {
+  const { name, year, month, selDate, loading, saving } = S;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const firstDay    = new Date(year, month - 1, 1).getDay();
+  const ym = `${year}-${String(month).padStart(2,'0')}`;
+
+  // ── Calendar cells
+  let cells = '';
+  for (let i = 0; i < firstDay; i++) cells += `<div class="cal-cell empty"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds   = `${ym}-${String(d).padStart(2,'0')}`;
+    const mine = name ? myBooking(ds) : null;
+    const oth  = othersOnDate(ds);
+    const isPendDelete = S.pending[ds] === 'delete';
+    const isPendSave   = S.pending[ds] && S.pending[ds] !== 'delete';
+    const isSel = selDate === ds;
+
+    let cls = 'cal-cell';
+    if (!name || (!mine && !oth.length)) cls += '';
+    if (mine && !isPendDelete) cls += isPendSave ? ' has-mine pending' : ' has-mine';
+    if (isPendDelete) cls += ' delete-pending';
+    if (isSel) cls += ' selected';
+
+    const dotHtml = (!mine || isPendDelete) && oth.length
+      ? `<span class="cal-dot"></span>` : '';
+
+    // show initials of others in small text inside blue cell
+    let othLabel = '';
+    if (mine && !isPendDelete && oth.length) {
+      othLabel = `<span class="others-label">+${oth.length}</span>`;
+    }
+
+    cells += `<div class="${cls}" onclick="tapDate('${ds}')">${d}${dotHtml}${othLabel}</div>`;
+  }
+
+  // ── Slot picker panel
+  let slotPanel = '';
+  if (selDate && name) {
+    const mine = myBooking(selDate);
+    const oth  = othersOnDate(selDate);
+    const dt   = new Date(selDate + 'T00:00:00');
+    const dayName = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'][dt.getDay()];
+
+    let othSection = '';
+    if (oth.length) {
+      const slotLbl = {full:'09:00–21:00', morning:'09:00–17:30', afternoon:'17:30–21:00'};
+      othSection = `<div class="others-section">
+        <div class="others-title">จองแล้ว:</div>
+        ${oth.map(b => `<span class="others-chip"><span>${b.name} · ${slotLbl[b.slot]||b.slot}</span></span>`).join('')}
+      </div>`;
+    }
+
+    slotPanel = `
+    <div class="slot-panel">
+      <div class="slot-date">วัน${dayName}ที่ ${dt.getDate()} ${MONTHS_TH[dt.getMonth()]} — เลือกช่วงเวลา</div>
+      <div class="slot-list">
+        ${SLOTS.map(sl => {
+          const isCur = mine && mine.slot === sl.id && S.pending[selDate] !== 'delete';
+          return `<div class="slot-item${isCur?' active':''}" onclick="tapSlot('${sl.id}')">
+            <span class="slot-lbl">${sl.label}</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span class="slot-hrs">${sl.hours} ชม.</span>
+              ${isCur ? `<span class="slot-check">✓</span>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    ${othSection}`;
+  }
+
+  // ── Booked list for this month
+  const allDates = [...new Set([
+    ...Object.keys(S.bookings).filter(d => d.startsWith(ym)),
+    ...Object.keys(S.pending).filter(d => d.startsWith(ym))
+  ])].sort();
+
+  const myDates = name ? allDates.filter(d => myBooking(d) !== null) : [];
+  const slotLbl = {full:'09:00–21:00', morning:'09:00–17:30', afternoon:'17:30–21:00'};
+  const pendCount = Object.keys(S.pending).length;
+
+  const listHtml = myDates.length
+    ? myDates.map(d => {
+        const b = myBooking(d);
+        const isPend = !!S.pending[d];
+        return `<div class="list-item">
+          <div>
+            <div class="list-date">${fmtDate(d)} ${isPend ? '<span class="list-pending-badge">ยังไม่บันทึก</span>' : ''}</div>
+            <div class="list-slot">${slotLbl[b.slot]||b.slot} · ${b.hours} ชม.</div>
+          </div>
+          <button class="del-btn" onclick="removeDate('${d}')">ยกเลิก</button>
+        </div>`;
+      }).join('')
+    : `<div class="empty-msg">${name ? 'ยังไม่มีการจองในเดือนนี้<br>กดวันในปฏิทินเพื่อจองงาน' : 'เลือกชื่อเภสัชกรด้านบน'}</div>`;
+
+  const noUrlWarning = !SCRIPT_URL
+    ? `<div class="no-url">⚠️ <b>ยังไม่ได้ตั้งค่า SCRIPT_URL</b><br>ดูขั้นตอน setup ใน SETUP.txt</div>`
+    : '';
+
+  return `
+  <div id="app-inner">
+    <!-- Header -->
+    <div class="hdr">
+      <div class="hdr-sub">ร้านยา · ระบบจองตารางงาน</div>
+      <div class="hdr-title">เลือกชื่อเภสัชกร</div>
+      <div class="name-pills">
+        ${NAMES.map(n => `<button class="pill${name===n?' active':''}" onclick="selectName('${n}')">${n}</button>`).join('')}
+      </div>
+    </div>
+
+    ${noUrlWarning}
+
+    <!-- Calendar -->
+    <div class="cal-wrap">
+      <div class="cal-hdr">
+        <div class="cal-month">
+          ${MONTHS_FULL[month-1]} ${year+543}
+          ${loading ? '<span class="loading-dot" style="margin-left:8px"></span>' : ''}
+        </div>
+        <div class="cal-nav">
+          <button class="nav-btn" onclick="prevMonth()">‹</button>
+          <button class="nav-btn" onclick="nextMonth()">›</button>
+        </div>
+      </div>
+      <div class="day-headers">
+        ${DAYS.map(d => `<div class="day-h">${d}</div>`).join('')}
+      </div>
+      <div class="cal-grid">${cells}</div>
+      ${slotPanel}
+    </div>
+
+    <!-- Booked list -->
+    <div class="list-section">
+      ${myDates.length
+        ? `<div class="list-title">วันที่จองไว้ <span class="list-badge">${myDates.length}</span></div>`
+        : ''}
+      ${listHtml}
+    </div>
+
+    ${pendCount > 0 ? `
+    <div class="save-bar">
+      <button class="save-btn" onclick="saveAll()" ${saving?'disabled':''}>
+        ${saving ? 'กำลังบันทึก…' : `บันทึกการจอง (${pendCount} วัน)`}
+      </button>
+    </div>
+    <div style="height:68px"></div>
+    ` : ''}
+  </div>`;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  render();
+});
+</script>
+</body>
+</html>
