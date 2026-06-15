@@ -253,17 +253,31 @@ function calcPh(name,y,m){
   return {hours,days,sal};
 }
 
+function shiftStart(shift){ return shift==='afternoon'?'12:00':'09:00'; }
+
 function calcSt(name,y,m){
-  let dedH=0,otH=0,workDays=0,abDays=0;
+  let dedH=0,otH=0,workDays=0,abDays=0,lateH=0;
   for(const ds of monthDates(y,m)){
     const rec=db.att[ds];
     if(!rec) continue;
     const s=(rec.st||[]).find(x=>x.name===name);
     if(!s) continue;
     const st=s.status;
-    if(st==='present'){ workDays++; otH+=Number(s.otHours)||0; }
-    else if(st==='half'){ workDays++; dedH+=4; abDays+=0.5; otH+=Number(s.otHours)||0; }
-    else if(st==='absent_leave'||st==='absent'){ dedH+=8; abDays++; }
+    if(st==='present'){
+      workDays++;
+      otH+=Number(s.otHours)||0;
+      // คำนวณเวลาสาย
+      if(s.actualStart){
+        const late=Math.max(0,Math.round(hms(shiftStart(s.shift),s.actualStart)*10)/10);
+        lateH+=late; dedH+=late;
+      }
+    } else if(st==='half'){
+      workDays++; dedH+=4; abDays+=0.5; otH+=Number(s.otHours)||0;
+      if(s.actualStart){
+        const late=Math.max(0,Math.round(hms(shiftStart(s.shift),s.actualStart)*10)/10);
+        lateH+=late; dedH+=late;
+      }
+    } else if(st==='absent_leave'||st==='absent'){ dedH+=8; abDays++; }
     // 'off' = nothing
   }
   const ym=`${y}-${String(m).padStart(2,'0')}`;
@@ -271,7 +285,7 @@ function calcSt(name,y,m){
   const dedAmt=dedH*R.ded;
   const otAmt=otH*R.ot;
   const sal=R.base-dedAmt+otAmt-advTot;
-  return {workDays,abDays,dedH,dedAmt,otH,otAmt,advTot,sal};
+  return {workDays,abDays,dedH,dedAmt,otH,otAmt,advTot,sal,lateH};
 }
 
 // ─── PAGE 1: ATTENDANCE ──────────────────────────────────────
@@ -287,12 +301,12 @@ function initAS(ds){
     }
   }
   const defSt=[
-    {name:'เมย์',shift:'morning',status:isOff('เมย์',ds)?'off':'present',otHours:0,otEnd:'',note:''},
-    {name:'นุ้ย',shift:'afternoon',status:isOff('นุ้ย',ds)?'off':'present',otHours:0,otEnd:'',note:''}
+    {name:'เมย์',shift:'morning',status:isOff('เมย์',ds)?'off':'present',otHours:0,otEnd:'',actualStart:'',note:''},
+    {name:'นุ้ย',shift:'afternoon',status:isOff('นุ้ย',ds)?'off':'present',otHours:0,otEnd:'',actualStart:'',note:''}
   ];
   if(rec&&rec.st&&rec.st.length>0){
     as.st=rec.st.map(s=>({name:s.name||'',shift:s.shift||'morning',status:s.status||'present',
-      otHours:Number(s.otHours)||0,otEnd:s.otEnd||'',note:s.note||''}));
+      otHours:Number(s.otHours)||0,otEnd:s.otEnd||'',actualStart:s.actualStart||'',note:s.note||''}));
     while(as.st.length<2) as.st.push(defSt[as.st.length]);
   } else {
     as.st=defSt;
@@ -372,11 +386,25 @@ function buildSc(i){
     {k:'absent_leave',l:'ลาเต็มวัน'},{k:'absent',l:'ขาด'},{k:'off',l:'วันหยุด'}
   ];
   const working=['present','half'].includes(s.status);
+  const isFull = s.shift==='full';
+  const sStart = s.shift==='afternoon'?'12:00':'09:00';
+  // คำนวณเวลาสายสำหรับ preview
+  let lateH=0;
+  if(s.actualStart && working){
+    lateH=Math.max(0,Math.round(hms(sStart,s.actualStart)*10)/10);
+  }
   let prevTxt='';
   if(s.name){
     if(s.status==='off') prevTxt='วันหยุด (ไม่หักเงิน)';
-    else if(s.status==='present') prevTxt=`มาทำงาน${s.otHours>0?' + OT '+fn(s.otHours)+' ชม. (+'+fm(s.otHours*R.ot)+' ฿)':''}`;
-    else if(s.status==='half') prevTxt=`ลาครึ่งวัน หัก ${fm(4*R.ded)} ฿${s.otHours>0?' + OT '+fn(s.otHours)+' ชม.':''}`;
+    else if(s.status==='present'){
+      const latePart=lateH>0?` สาย ${fn(lateH)} ชม. (หัก ${fm(lateH*R.ded)} ฿)`:'';
+      const otPart=s.otHours>0?` + OT ${fn(s.otHours)} ชม. (+${fm(s.otHours*R.ot)} ฿)`:'';
+      prevTxt=`มาทำงาน${latePart}${otPart}`;
+    }
+    else if(s.status==='half'){
+      const latePart=lateH>0?` + สาย ${fn(lateH)} ชม.`:'';
+      prevTxt=`ลาครึ่งวัน หัก ${fm((4+lateH)*R.ded)} ฿${latePart}${s.otHours>0?' + OT '+fn(s.otHours)+' ชม.':''}`;
+    }
     else if(s.status==='absent_leave') prevTxt=`ลาเต็มวัน หัก ${fm(8*R.ded)} ฿`;
     else if(s.status==='absent') prevTxt=`ขาด หัก ${fm(8*R.ded)} ฿`;
   }
@@ -405,8 +433,17 @@ function buildSc(i){
         กะเช้า<br><small style="font-size:11px">09:00–18:00</small></button>
       <button class="shb ${s.shift==='afternoon'?'on':''}" onclick="stChg(${i},'shift','afternoon')">
         กะเที่ยง<br><small style="font-size:11px">12:00–21:00</small></button>
+      <button class="shb ${s.shift==='full'?'on':''}" onclick="stChg(${i},'shift','full')">
+        กะเช้า+OT<br><small style="font-size:11px">09:00–21:00</small></button>
     </div>
   </div>
+  <div class="fr">
+    <label>เวลาเข้างานจริง <span style="font-size:11px;color:var(--text2)">(ถ้าสายกว่ากะ ระบุเพื่อหักเงิน)</span></label>
+    <input type="time" value="${s.actualStart||''}" oninput="stChg(${i},'actualStart',this.value)"
+      placeholder="${sStart}">
+    ${lateH>0?`<div class="hint" style="color:var(--red)">สาย ${fn(lateH)} ชม. → หัก ${fm(lateH*R.ded)} บาท</div>`:''}
+  </div>
+  ${!isFull?`
   <div class="ot-sec">
     <label>OT (ถ้ามี)</label>
     <div class="fr2">
@@ -417,7 +454,17 @@ function buildSc(i){
           placeholder="0" oninput="stChg(${i},'otHours',Number(this.value))"></div>
     </div>
     <div class="hint" id="ot-calc-${i}">${s.otHours>0?`OT ${fn(s.otHours)} ชม. = ${fm(s.otHours*R.ot)} บาท`:''}</div>
-  </div>`:''}
+  </div>`:`
+  <div class="ot-sec">
+    <div style="background:var(--green-light);border-radius:8px;padding:8px 10px;font-size:13px">
+      กะเช้า+OT: OT อัตโนมัติ 3 ชม. (18:00–21:00) = <strong>${fm(3*R.ot)} บาท</strong>
+      <br><span style="font-size:11px;color:var(--text2)">แก้ไขได้:</span>
+      <input type="number" id="ot-h-${i}" value="${s.otHours!=null?s.otHours:3}" min="0" max="3" step="0.5"
+        style="width:70px;display:inline-block;margin-left:4px;padding:4px 6px"
+        oninput="stChg(${i},'otHours',Number(this.value))"> ชม.
+    </div>
+  </div>`}
+  `:''}
   <div class="fr" style="margin-top:8px">
     <label>หมายเหตุ</label>
     <input type="text" placeholder="..." value="${s.note||''}" oninput="stChg(${i},'note',this.value)">
@@ -471,11 +518,17 @@ function phTChg(n){
 }
 function stChg(i,f,v){
   as.st[i][f]=v;
-  if(f==='status'&&!['present','half'].includes(v)){ as.st[i].otHours=0; as.st[i].otEnd=''; }
+  if(f==='status'&&!['present','half'].includes(v)){ as.st[i].otHours=0; as.st[i].otEnd=''; as.st[i].actualStart=''; }
+  if(f==='shift'){
+    if(v==='full'){ as.st[i].otHours=3; as.st[i].otEnd=''; }
+    else { as.st[i].otHours=0; as.st[i].otEnd=''; }
+    as.st[i].actualStart='';
+  }
   renderAtt();
 }
 function otTChg(i,endT){
   as.st[i].otEnd=endT;
+  // กะเช้าปกติ OT นับจาก 18:00, กะเที่ยง นับจาก 21:00 (ไม่มี OT)
   const shiftEnd=as.st[i].shift==='morning'?'18:00':'21:00';
   const h=Math.max(0,Math.min(3,Math.round(hms(shiftEnd,endT)*10)/10));
   as.st[i].otHours=h;
