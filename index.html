@@ -302,23 +302,39 @@ function jsonpFetch(url, done){
   document.head.appendChild(s);
 }
 
-function fetchSchedule(ds){
+function fetchSchedule(ds, force){
   if(!SCRIPT_URL) return;
+  if(!force && db.att[ds]) return; // มีข้อมูลบันทึกแล้ว ไม่ override อัตโนมัติ
   const url=`${SCRIPT_URL}?action=get&year=${ds.slice(0,4)}&month=${parseInt(ds.slice(5,7))}`;
   jsonpFetch(url,function(err,data){
     if(err||!data) return;
     const list=data[ds];
-    if(!list||!list.length) return;
-    const SLOT_H={full:12,morning:8.5,afternoon:3.5};
+    if(!list||!list.length){ if(force) toast('ไม่พบตารางจองวันนี้'); return; }
+    // st_morning/st_afternoon/st_full → morning/afternoon/full
+    const SLOT_MAP={full:'full',morning:'morning',afternoon:'afternoon',
+                    st_morning:'morning',st_afternoon:'afternoon',st_full:'full'};
+    const SLOT_H={full:12,morning:8.5,afternoon:3.5,st_morning:9,st_afternoon:9,st_full:12};
     let changed=false;
     for(const b of list){
-      if(as.ph[b.name]!==undefined && !as.ph[b.name].on){
+      // เภสัชกร
+      if(as.ph[b.name]!==undefined){
         as.ph[b.name].on=true;
         as.ph[b.name].hours=SLOT_H[b.slot]||b.hours||0;
         changed=true;
       }
+      // พนักงาน
+      const si=as.st.findIndex(s=>s.name===b.name);
+      if(si>=0){
+        const shift=SLOT_MAP[b.slot]||'morning';
+        as.st[si].status='present';
+        as.st[si].shift=shift;
+        as.st[si].otHours=shift==='full'?3:0;
+        as.st[si].otEnd=''; as.st[si].actualStart='';
+        changed=true;
+      }
     }
     if(changed){ renderAtt(); toast('📅 โหลดตารางจองแล้ว'); }
+    else if(force) toast('ไม่พบตารางจองวันนี้');
   });
 }
 
@@ -545,8 +561,8 @@ function buildHistory(){
   }).join('');
 }
 
-function changeDt(ds){ curDate=ds; initAS(ds); renderAtt(); if(SCRIPT_URL) fetchSchedule(ds); }
-function loadSched(){ fetchSchedule(curDate); toast('⏳ กำลังโหลด...'); }
+function changeDt(ds){ curDate=ds; initAS(ds); renderAtt(); fetchSchedule(ds, false); }
+function loadSched(){ fetchSchedule(curDate, true); toast('⏳ กำลังโหลด...'); }
 function togPh(n){ as.ph[n].on=!as.ph[n].on; renderAtt(); }
 function phHSet(n,v){ as.ph[n].hours=v; as.ph[n].t1=''; as.ph[n].t2=''; renderAtt(); }
 function phHChg(n,v){
