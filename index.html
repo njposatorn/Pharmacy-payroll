@@ -155,7 +155,7 @@ const PH = ['พริม','เฟิร์น','กลองแต๊ก'];
 const ST = ['เมย์','นุ้ย'];
 const ALL = [...PH,...ST];
 const OFF = {'เมย์':[0,1],'นุ้ย':[5,6]};
-const R = {ph:160,base:9000,ot:78,ded:52,kd:200,kl:5000};
+const R = {ph:160,base:9000,ot:78,ded:52,kl:5000};
 const DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
 const MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
   'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -253,7 +253,7 @@ function calcPh(name,y,m){
     if(p){ hours+=Number(p.hours)||0; days++; }
   }
   let sal=hours*R.ph;
-  if(name==='กลองแต๊ก') sal+=days*R.kd+R.kl;
+  if(name==='กลองแต๊ก') sal+=R.kl;
   return {hours,days,sal};
 }
 
@@ -424,7 +424,7 @@ function buildPc(n){
   <div class="pc-hdr" onclick="togPh('${n}')">
     <input type="checkbox" ${s.on?'checked':''} onclick="event.stopPropagation();togPh('${n}')">
     <span class="pc-name">${n}</span>
-    ${n==='กลองแต๊ก'?'<span class="badge bp2">+เบี้ย+ใบประกอบ</span>':''}
+    ${n==='กลองแต๊ก'?'<span class="badge bp2">+ใบประกอบ</span>':''}
   </div>
   <div class="pc-body">
     <div class="fr">
@@ -759,7 +759,7 @@ function renderDash(){
       </tr>
     </tbody>
   </table></div>
-  <div class="hint" style="margin-top:8px">* กลองแต๊ก รวมเบี้ย ${R.kd} ฿/วัน + ใบประกอบ ${fm(R.kl)} ฿/เดือน</div>
+  <div class="hint" style="margin-top:8px">* กลองแต๊ก รวมค่าใบประกอบ ${fm(R.kl)} ฿/เดือน</div>
 </div>
 
 <div class="card">
@@ -871,9 +871,9 @@ function doExport(){
   const s2=[
     [`สรุปเงินเดือน เดือน${MONTHS[dm-1]} ${dy+543}`],[],
     ['เภสัชกร'],
-    ['ชื่อ','จำนวนวัน','ชั่วโมงรวม','ค่าแรง (ชม.×160)','เบี้ยพิเศษ (กลองแต๊ก)','ค่าใบประกอบ (กลองแต๊ก)','รวม'],
+    ['ชื่อ','จำนวนวัน','ชั่วโมงรวม','ค่าแรง (ชม.×160)','ค่าใบประกอบ (กลองแต๊ก)','รวม'],
     ...phr.map(r=>[r.n,r.days,r.hours,r.hours*R.ph,
-      r.n==='กลองแต๊ก'?r.days*R.kd:0,r.n==='กลองแต๊ก'?R.kl:0,r.sal]),
+      r.n==='กลองแต๊ก'?R.kl:0,r.sal]),
     [],
     ['พนักงาน'],
     ['ชื่อ','เงินเดือนฐาน','วันขาด/ลา','ชม.ขาด/ลา','ยอดหัก (ชม.×52)','ชม.OT','เงิน OT (ชม.×78)','ยอดเบิก','เงินที่ได้รับจริง'],
